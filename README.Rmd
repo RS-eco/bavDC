@@ -21,6 +21,17 @@ if(!"remotes" %in% installed.packages()[,"Package"]) install.packages("remotes")
 remotes::install_github("RS-eco/bavDC", build_vignettes = T)
 ```
 
+If package installation with `install_github()` fails, try this as an alternative:
+
+```{r, eval=F}
+tmp_zip <- tempfile(fileext = ".zip")
+source_url <- "https://api.github.com/repos/RS-eco/bavDC/zipball/main"
+utils::download.file(source_url, destfile=tmp_zip, method="wget")
+file.exists(tmp_zip)
+
+remotes::install_local(tmp_zip)
+```
+
 After installation, simply load the `bavDC` package:
 
 ```{r, message=FALSE}
@@ -52,10 +63,10 @@ data("alt_bav_tk4tel")
 data("bavaria")
 
 # BayWRF monthly climate data
-load(system.file("extdata", "baywrf_pr_bav.rda", package = "baVDC"))
-load(system.file("extdata", "baywrf_tas_bav.rda", package = "baVDC"))
-load(system.file("extdata", "baywrf_tasmin_bav.rda", package = "baVDC"))
-load(system.file("extdata", "baywrf_tasmax_bav.rda", package = "baVDC"))
+load(system.file("extdata", "baywrf_pr_bav.rda", package = "bavDC"))
+load(system.file("extdata", "baywrf_tas_bav.rda", package = "bavDC"))
+load(system.file("extdata", "baywrf_tasmin_bav.rda", package = "bavDC"))
+load(system.file("extdata", "baywrf_tasmax_bav.rda", package = "bavDC"))
 
 # BioTime data for Germany
 data("biotime_deu")
@@ -64,7 +75,7 @@ data("biotime_deu")
 data("amphibians_bav")
 data("bird_bav")
 data("gard_reptiles_bav")
-load(system.file("extdata", "mammals_bav.rda", package = "baVDC"))
+load(system.file("extdata", "mammals_bav.rda", package = "bavDC"))
 data("odonata_bav")
 data("reptiles_bav")
 
@@ -88,13 +99,13 @@ data("chelsa_bav_tk4tel")
 # Euro-cordex climate simulations
 data("cordex_bioclim_bav_tk4tel")
 data("cordex_bioclim_bav")
-load(system.file("extdata", "cordex_prAdjust_bav.rda", package = "baVDC"))
-load(system.file("extdata", "cordex_tasminAdjust_bav.rda", package = "baVDC"))
-load(system.file("extdata", "cordex_tasmaxAdjust_bav.rda", package = "baVDC"))
+load(system.file("extdata", "cordex_prAdjust_bav.rda", package = "bavDC"))
+load(system.file("extdata", "cordex_tasminAdjust_bav.rda", package = "bavDC"))
+load(system.file("extdata", "cordex_tasmaxAdjust_bav.rda", package = "bavDC"))
 
-#The analysis of all monthly Euro-Cordex climate scenarios can be found here: https://raw.githubusercontent.com/RS-eco/baVDC/main/vignettes/bavaria-eurocordex.html
+#The analysis of all monthly Euro-Cordex climate scenarios can be found here: https://raw.githubusercontent.com/RS-eco/bavDC/main/vignettes/bavaria-eurocordex.html
 
-#And the corresponding .Rmd-file is available from here: https://raw.githubusercontent.com/RS-eco/baVDC/main/vignettes/bavaria-eurocordex.Rmd
+#And the corresponding .Rmd-file is available from here: https://raw.githubusercontent.com/RS-eco/bavDC/main/vignettes/bavaria-eurocordex.Rmd
 
 # Corine land-cover and land cover change
 data("corine_cha_bav_tk4tel") # Land-cover change
@@ -117,10 +128,10 @@ data("diva_water_lines_deu") # Rivers
 
 # DWD climate data
 data("dwd_annual_ts_bav") # Annual time series data of whole of Bavaria
-load(system.file("extdata", "dwd_yearmon_rsms_bav_tk4tel.rda", package = "baVDC")) # Gridded monthly climate data
-load(system.file("extdata", "dwd_yearmon_tadnmm_bav_tk4tel.rda", package = "baVDC"))
-load(system.file("extdata", "dwd_yearmon_tadxmm_bav_tk4tel.rda", package = "baVDC"))
-load(system.file("extdata", "dwd_yearmon_tamm_bav_tk4tel.rda", package = "baVDC"))
+load(system.file("extdata", "dwd_yearmon_rsms_bav_tk4tel.rda", package = "bavDC")) # Gridded monthly climate data
+load(system.file("extdata", "dwd_yearmon_tadnmm_bav_tk4tel.rda", package = "bavDC"))
+load(system.file("extdata", "dwd_yearmon_tadxmm_bav_tk4tel.rda", package = "bavDC"))
+load(system.file("extdata", "dwd_yearmon_tamm_bav_tk4tel.rda", package = "bavDC"))
 
 # E-OBS observed climate data
 data("e-obs_elev_ens_0.1deg_bav")
@@ -213,7 +224,7 @@ data("ng_abspziele")
 
 # Protected areas
 data("dist_pa_bav_tk4tel")
-load(system.file("extdata", "pa_bav.rda", package = "baVDC"))
+load(system.file("extdata", "pa_bav.rda", package = "bavDC"))
 data("pa_bav_tk4tel")
 
 # Plot coordinates

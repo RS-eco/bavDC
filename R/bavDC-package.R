@@ -1,9 +1,9 @@
-#' bdc: Bavarian Data Cube
+#' bavDC: Bavarian Data Cube
 #' 
-#' @name bdc package
-#' @aliases bdcpackage
+#' @name bavDC package
+#' @aliases bavDCpackage
 #' @docType package
-#' @title bdc: Bavarian Data Cube
+#' @title bavDC: Bavarian Data Cube
 #' @description R package to access various data sources for Bavaria, i.e. elevation, climate and land-use data.
 #' @author RS-eco
 #' @keywords package

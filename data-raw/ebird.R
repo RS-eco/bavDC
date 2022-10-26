@@ -30,7 +30,7 @@ data <- ebird %>% filter(LATITUDE >= minlat & LATITUDE <= maxlat) %>%
   collect() %>% data.frame()
 
 # Write data to file
-if(nrow(data) > 0){write.csv(data, paste0("C:/Users/admin/Documents/Github/bdc/data/ebird_", country, ".csv"))}
+if(nrow(data) > 0){write.csv(data, paste0("C:/Users/admin/Documents/Github/bavDC/data/ebird_", country, ".csv"))}
 
 # Disconnect database
 DBI::dbDisconnect(con); rm(ebird, con)
@@ -60,7 +60,7 @@ data <- ebird %>% filter(LATITUDE >= minlat & LATITUDE <= maxlat) %>%
   collect() %>% data.frame()
 
 # Write data to file
-if(nrow(data) > 0){write.csv(data, paste0("C:/Users/admin/Documents/Github/bdc/data/ebird_", country, ".csv"))}
+if(nrow(data) > 0){write.csv(data, paste0("C:/Users/admin/Documents/Github/bavDC/data/ebird_", country, ".csv"))}
 
 # Disconnect database
 DBI::dbDisconnect(con); rm(ebird, con)

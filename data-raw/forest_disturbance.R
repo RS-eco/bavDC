@@ -16,7 +16,7 @@ names(dat)
 #plot(dat[[2]])
 
 # Load shapefile of Bavaria
-library(bdc)
+library(bavDC)
 data(bavaria)
 bavaria <- sf::st_transform(bavaria, raster::crs(dat))
 

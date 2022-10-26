@@ -23,7 +23,7 @@ library(processNC)
 library(terra)
 
 # Set file directory
-setwd("/home/matt/Documents/bdc")
+setwd("/home/matt/Documents/bavDC")
 
 # Set file directory
 filedir <- "/home/matt/Documents/e-obs"

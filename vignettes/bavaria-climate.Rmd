@@ -13,8 +13,8 @@ editor_options:
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = T, comment = NA, warning=F, message=F, eval=T, echo=T, error=F, 
-  comment = "#>", fig.path="../figures/"
+  collapse = T, comment = NA, warning=F, message=F, eval=F, 
+  echo=T, error=F, comment = "#>", fig.path="../figures/"
 )
 ```
 

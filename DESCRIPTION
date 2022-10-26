@@ -8,8 +8,7 @@ Authors@R:
 Maintainer: RS-eco <rs-eco@posteo.de>
 Description: R package to access various data sources for Bavaria, i.e. elevation, climate and land-use data.
 Depends: R (>= 4.0)
-Imports: dplyr, sf, sp
-Suggests: knitr, rmarkdown, raster, ggplot2, data.table, dtplyr,
+Suggests: dplyr, sf, sp, knitr, rmarkdown, raster, ggplot2, data.table, dtplyr,
     lubridate, patchwork, tidyverse, zoo, scales, tidyr, taxize, 
     magrittr, GGally, scico, vroom, ggstatsplot, vegan, ggcorrplot,
     terra, remotes, caret, mecofun, ggthemes, ggsci, ggspatial, DBI, RSQLite

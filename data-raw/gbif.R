@@ -27,7 +27,7 @@ data <- gbif %>% filter(decimallatitude >= minlat & decimallatitude <= maxlat) %
 data <- dplyr::select(data, -c(datasetkey, occurrenceid, eventdate, depth, depthaccuracy, typestatus, issue))
 
 # Write data to file
-#write.csv(data, paste0("C:/Users/admin/Documents/Github/bdc/data/gbif_", country, ".csv"))
+#write.csv(data, paste0("C:/Users/admin/Documents/Github/bavDC/data/gbif_", country, ".csv"))
 
 #gbif_deu <- data
 #save(gbif_deu, file="data/gbif_deu.rda", compress="xz")

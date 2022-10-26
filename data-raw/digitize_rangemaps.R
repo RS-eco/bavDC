@@ -7,8 +7,8 @@ rm(list=ls())
 library(tidyverse)
 library(readODS)
 
-# Install bdc package for tk25_grid
-#if(!("bdc" %in% installed.packages()[,"Package"])){remotes::install_github("RS-eco/bdc")}
+# Install bavDC package for tk25_grid
+#if(!("bavDC" %in% installed.packages()[,"Package"])){remotes::install_github("RS-eco/bavDC")}
 
 # Set working directory
 filedir <- "/home/matt/t6p/group_hof/@BayKliF/data/"
@@ -47,7 +47,7 @@ lapply(c("Libellen", "Aves"), function(taxa){
     dat$KARTE_QUAD <- as.numeric(paste0(dat$KARTE, dat$QUAD))
     
     # Get grid information
-    #library(bdc)
+    #library(bavDC)
     #data(tk4tel_grid)
     load("data/tk4tel_db.rda")
     head(tk4tel_db)

@@ -5,7 +5,7 @@
 #https://ec.europa.eu/eurostat/de/web/gisco/geodata/reference-data/elevation/eu-dem/hillshade
 
 # Set working directory
-setwd("C:/Users/Admin/Documents/bdc")
+setwd("C:/Users/Admin/Documents/bavDC")
 
 # Load packages
 library(terra); library(dplyr)

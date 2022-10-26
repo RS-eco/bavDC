@@ -38,7 +38,7 @@ baywrf_rp <- osf_retrieve_node("aq58b")
 #files <- osf_ls_files(baywrf_rp, path="3D_DATA", n_max=50)
 #osf_download(files, path="/home/matt/Documents/WRF", recurse=T, conflicts="skip")
 
-setwd("/home/matt/Documents/bdc")
+setwd("/home/matt/Documents/bavDC")
 rm(list=ls()); gc()
 
 # List files
@@ -139,7 +139,7 @@ save(baywrf_pr_bav, file="data/baywrf_pr_bav.rda", compress="xz")
 
 # Obtain & pre-process tasmax & tasmin data
 
-setwd("/home/matt/Documents/bdc")
+setwd("/home/matt/Documents/bavDC")
 rm(list=ls()); gc()
 
 # List files

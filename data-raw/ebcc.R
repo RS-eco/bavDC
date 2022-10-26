@@ -11,7 +11,7 @@ rm(list=ls()); gc()
 # Set working directory
 #filedir <- "/home/matt/t6p/group_hof/@BayKlif/data/EBCC/"
 #filedir <- "Z:/group_hof/@BayKlif/data/EBCC/"
-filedir <- "/home/matt/Documents/bdc/extdata"
+filedir <- "/home/matt/Documents/bavDC/extdata"
 
 # Read data
 library(vroom)
@@ -48,7 +48,7 @@ r_dat
 
 # Only select points lying inside bavaria
 library(sf)
-data("bavaria", package="bdc")
+data("bavaria", package="bavDC")
 sf_ebcc_bav <- st_crop(sf_birds, st_buffer(bavaria, dist=20000))
 plot(st_geometry(sf_ebcc_bav))
 plot(st_geometry(bavaria), add=T)
@@ -59,7 +59,7 @@ colnames(ebcc_bav)[495:496]
 colnames(ebcc_bav)[495:496] <- c("decimalLongitude", "decimalLatitude")
 save(ebcc_bav, file="data/ebcc_bav.rda", compress="xz")
 
-load("~/Documents/bdc/data/ebcc_bav.rda")
+load("~/Documents/bavDC/data/ebcc_bav.rda")
 # Convert data into a SpatialPointsDataFrame
 library(sp); library(raster); library(dplyr)
 ebcc_bav <- ebcc_bav %>% as.data.frame() %>% tidyr::drop_na()

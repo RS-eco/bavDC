@@ -7,7 +7,7 @@ library(rinat)
 library(dplyr)
 
 # Load bavaria shapefile
-load("~/Documents/bdc/data/bavaria.rda")
+load("~/Documents/bavDC/data/bavaria.rda")
 sf::st_bbox(bavaria)
 
 ## Search by area
