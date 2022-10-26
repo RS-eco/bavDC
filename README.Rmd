@@ -1,5 +1,5 @@
 ---
-title: "bavDC - Bavarian Data Cube"
+title: "bavDC: Bavarian Data Cube"
 output: github_document
 editor_options: 
   chunk_output_type: console
