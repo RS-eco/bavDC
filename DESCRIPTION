@@ -1,0 +1,25 @@
+Package: bavDC
+Type: Package
+Title: Bavarian Data Cube
+Version: 0.0.1
+Date: 2022-10-26
+Authors@R: 
+    person("RS-eco", email = "RS-eco@posteo.de", role = c("cre", "aut"))
+Maintainer: RS-eco <rs-eco@posteo.de>
+Description: R package to access various data sources for Bavaria, i.e. elevation, climate and land-use data.
+Depends: R (>= 4.0)
+Imports: dplyr, sf, sp
+Suggests: knitr, rmarkdown, raster, ggplot2, data.table, dtplyr,
+    lubridate, patchwork, tidyverse, zoo, scales, tidyr, taxize, 
+    magrittr, GGally, scico, vroom, ggstatsplot, vegan, ggcorrplot,
+    terra, remotes, caret, mecofun, ggthemes, ggsci, ggspatial, DBI, RSQLite
+License: file LICENSE
+LazyData: TRUE
+LazyDataCompression: xz
+Encoding: UTF-8
+VignetteBuilder: knitr
+RoxygenNote: 7.2.1
+NeedsCompilation: no
+Author: RS-eco [cre, aut]
+URL: https://github.com/RS-eco/bavDC
+BugReports: https://github.com/RS-eco/bavDC/issues
