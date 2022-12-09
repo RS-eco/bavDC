@@ -18,29 +18,28 @@ my_db <- DBI::dbConnect(RSQLite::SQLite(), "rawdata/ASK.db")
 DBI::dbListTables(my_db)
 
 # Load background grid
-tk25_db <- dplyr::tbl(my_db, "geo_tk25_quadranten") %>% dplyr::collect()
+tk4tel_db <- dplyr::tbl(my_db, "geo_tk25_quadranten") %>% dplyr::collect()
 
-tk25_db <- tk25_db # %>% tidyr::unite(col="quadrant", c("KARTE", "QUADRANT"), sep="/", remove = TRUE) %>% 
+tk4tel_db <- tk4tel_db # %>% tidyr::unite(col="quadrant", c("KARTE", "QUADRANT"), sep="/", remove = TRUE) %>% 
 #dplyr::select(-c("KARTE_QUAD"))
 
-tk4tel_db <- tk25_db %>% dplyr::select(c("XLU", "YLU", "XRU", "YRU", "XRO", "YRO", "XLO", 
+tk4tel_db <- tk4tel_db %>% dplyr::select(c("XLU", "YLU", "XRU", "YRU", "XRO", "YRO", "XLO", 
                                   "YLO", "XQMITTE", "YQMITTE", "KARTE_QUAD"))
 save(tk4tel_db, file="data/tk4tel_db.rda", compress = "xz")
 
 library(scico)
 ggplot() +
-  geom_rect(data=tk25_db, aes(xmin = XLU, xmax = XRU, 
+  geom_rect(data=tk4tel_db, aes(xmin = XLU, xmax = XRU, 
                               ymin = YLU, ymax = YLO, fill=KARTE_QUAD)) + 
   scale_fill_scico(palette="roma")
 ggplot() +
-  geom_point(data=tk25_db, aes(x = XQMITTE, y = YQMITTE, fill=KARTE_QUAD)) + 
-  scale_fill_scico(palette="roma")
+  geom_point(data=tk4tel_db, aes(x = XQMITTE, y = YQMITTE, col=KARTE_QUAD), size=1) + 
+  scale_colour_scico(palette="roma")
 
-ggplot() +
-  geom_rect(data=tk25_db, aes(xmin = XLU, xmax = XRU, 
+x11();ggplot() +
+  geom_rect(data=tk4tel_db, aes(xmin = XLU, xmax = XRU, 
                               ymin = YLU, ymax = YLO), fill=NA, colour="black") + 
-  geom_point(data=tk25_db, aes(x = XQMITTE, y = YQMITTE, fill=KARTE_QUAD), size=1/5) 
-
+  geom_point(data=tk4tel_db, aes(x = XQMITTE, y = YQMITTE, fill=KARTE_QUAD), size=1/5) 
 
 # Polygons are intersecting, thus XQMITTE, YQMITTE are not in a regular distance interval (geom_tile does not work)
 # => One could fix this by creating polygons for each grid cell, intersecting the polygons and calculating the mid point!
