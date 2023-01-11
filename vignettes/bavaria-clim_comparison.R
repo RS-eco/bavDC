@@ -1,26 +1,10 @@
----
-title: "Climate data comparison of Bavaria"
-author: "RS-eco"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Climate data comparison of Bavaria}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
----
-
-```{r setup, include = FALSE}
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = T, comment = NA, warning=F, message=F, eval=T, 
   echo=T, error=F, comment = "#>", fig.path="../figures/"
 )
-```
 
-## Load packages & data
-
-```{r pa-overview}
+## ----pa-overview--------------------------------------------------------------
 # Load bavDC & ggplot2 package
 library(bavDC); library(dplyr); library(tidyr); library(ggplot2); library(patchwork)
 
@@ -50,11 +34,8 @@ load(system.file("extdata", "cordex_tasmaxAdjust_bav.rda", package = "bavDC"))
 # WFDE5 re-analysis climate data (0.5°)
 data("wfde5_rainf_bav")
 data("wfde5_tair_bav") # In Kelvin
-```
 
-## Plot time-series of monthly climate data
-
-```{r, fig.width=9, fig.height=6}
+## ---- fig.width=9, fig.height=6-----------------------------------------------
 ## Plot of tmean
 baywrf_tmean <- baywrf_tas_bav %>% tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
   group_by(date) %>% summarise(baywrf=mean(tmean, na.rm=T))
@@ -115,17 +96,11 @@ p2 <- all_pr %>% ggplot(aes(x=date, y=pr, col=Dataset)) +
   geom_line() + theme_bw()
 
 p1 / p2
-```
 
-# Plot spatial maps of different data sets
+## -----------------------------------------------------------------------------
 
-```{r}
 
-```
-
-# Create correlation matrix
-
-```{r cormat, fig.width=6, fig.height=6}
+## ----cormat, fig.width=6, fig.height=6----------------------------------------
 # GGally, to assess the distribution and correlation of variables 
 #library(GGally)
 
@@ -139,4 +114,4 @@ p1 / p2
 #ggcorr(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr), 
 #       nbreaks = 9,method = c("everything", "pearson"), label=T)
 #rm(list=ls()); invisible(gc())
-```
+

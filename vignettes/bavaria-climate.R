@@ -1,64 +1,64 @@
 ## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
-  collapse = T, comment = NA, warning=F, message=F, eval=F, 
+  collapse = T, comment = NA, warning=F, message=F, eval=T, 
   echo=T, error=F, comment = "#>", fig.path="../figures/"
 )
 
 ## ----pa-overview, fig.width=6, fig.height=7-----------------------------------
-#  # Load bavDC & ggplot2 package
-#  library(bavDC); library(dplyr); library(ggplot2); library(patchwork)
-#  
-#  # Load climate data from bavDC package
-#  data(dwd_annual_ts_bav, package="bavDC")
-#  head(dwd_annual_ts_bav)
-#  
-#  # Cold-temperature related variables
-#  p1 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot(aes(x=Jahr)) + geom_line(aes(y=air_temperature_mean))
-#  p2 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot(aes(x=Jahr)) + geom_bar(aes(y=frost_days), stat="identity")
-#  p3 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot(aes(x=Jahr)) + geom_bar(aes(y=ice_days), stat="identity")
-#  p1 + p2 + p3 + plot_layout(ncol=1) &
-#    theme_bw() & scale_x_continuous(limits=c(1979.25,2020.75), expand=c(0,0),
-#                                    breaks=c(1980, 1990,2000,2010,2020))
-#  
-#  # Warm-temperature related variables
-#  p4 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot(aes(x=Jahr)) + geom_bar(aes(y=hot_days), stat="identity")
-#  p5 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot(aes(x=Jahr)) + geom_line(aes(y=tropical_nights_tminGE20))
-#  p6 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot() + geom_bar(aes(x=Jahr, y=summer_days), stat="identity")
-#  p7 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot() + geom_line(aes(x=Jahr, y=sunshine_duration))
-#  p1 + p4 + p5 + p6 + p7 + plot_layout(ncol=1) &
-#    theme_bw() & scale_x_continuous(limits=c(1979.25,2020.75), expand=c(0,0),
-#                                    breaks=c(1980, 1990,2000,2010,2020))
-#  
-#  # Precipitation related variables
-#  p8 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot() + geom_line(aes(x=Jahr, y=precipGE10mm_days))
-#  p9 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot() + geom_line(aes(x=Jahr, y=precipGE20mm_days))
-#  p10 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
-#    ggplot() + geom_line(aes(x=Jahr, y=precipitation))
-#  p8 + p9 + p10 + plot_layout(ncol=1) &
-#    theme_bw() & scale_x_continuous(limits=c(1979.25,2020.75), expand=c(0,0),
-#                                    breaks=c(1980, 1990,2000,2010,2020))
+# Load bavDC & ggplot2 package
+library(bavDC); library(dplyr); library(ggplot2); library(patchwork)
+
+# Load climate data from bavDC package
+data(dwd_annual_ts_bav, package="bavDC")
+head(dwd_annual_ts_bav)
+
+# Cold-temperature related variables
+p1 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot(aes(x=Jahr)) + geom_line(aes(y=air_temperature_mean))
+p2 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot(aes(x=Jahr)) + geom_bar(aes(y=frost_days), stat="identity")
+p3 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot(aes(x=Jahr)) + geom_bar(aes(y=ice_days), stat="identity")
+p1 + p2 + p3 + plot_layout(ncol=1) & 
+  theme_bw() & scale_x_continuous(limits=c(1979.25,2020.75), expand=c(0,0),
+                                  breaks=c(1980, 1990,2000,2010,2020))
+
+# Warm-temperature related variables
+p4 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot(aes(x=Jahr)) + geom_bar(aes(y=hot_days), stat="identity")
+p5 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot(aes(x=Jahr)) + geom_line(aes(y=tropical_nights_tminGE20))
+p6 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot() + geom_bar(aes(x=Jahr, y=summer_days), stat="identity")
+p7 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot() + geom_line(aes(x=Jahr, y=sunshine_duration))
+p1 + p4 + p5 + p6 + p7 + plot_layout(ncol=1) & 
+  theme_bw() & scale_x_continuous(limits=c(1979.25,2020.75), expand=c(0,0),
+                                  breaks=c(1980, 1990,2000,2010,2020))
+
+# Precipitation related variables
+p8 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot() + geom_line(aes(x=Jahr, y=precipGE10mm_days))
+p9 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot() + geom_line(aes(x=Jahr, y=precipGE20mm_days))
+p10 <- dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>%
+  ggplot() + geom_line(aes(x=Jahr, y=precipitation))
+p8 + p9 + p10 + plot_layout(ncol=1) & 
+  theme_bw() & scale_x_continuous(limits=c(1979.25,2020.75), expand=c(0,0),
+                                  breaks=c(1980, 1990,2000,2010,2020))
 
 ## ----dwd-cormat, fig.width=6, fig.height=6------------------------------------
-#  # GGally, to assess the distribution and correlation of variables
-#  library(GGally)
-#  
-#  # Check correlations (as scatterplots), distribution and print correlation coefficient
-#  ggpairs(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr))
-#  
-#  # Check correlation between variables
-#  #cor(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr))
-#  
-#  # Nice visualization of correlations
-#  ggcorr(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr),
-#         nbreaks = 9,method = c("everything", "pearson"), label=T)
-#  rm(list=ls()); invisible(gc())
+# GGally, to assess the distribution and correlation of variables 
+library(GGally)
+
+# Check correlations (as scatterplots), distribution and print correlation coefficient 
+ggpairs(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr)) 
+
+# Check correlation between variables
+#cor(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr)) 
+
+# Nice visualization of correlations
+ggcorr(dwd_annual_ts_bav %>% filter(Jahr >= 1980) %>% select(-Jahr), 
+       nbreaks = 9,method = c("everything", "pearson"), label=T)
+rm(list=ls()); invisible(gc())
 
