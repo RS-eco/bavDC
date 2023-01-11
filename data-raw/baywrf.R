@@ -42,7 +42,7 @@ setwd("/home/matt/Documents/bavDC")
 rm(list=ls()); gc()
 
 # List files
-(files <- list.files("/home/matt/Documents/WRF", pattern="3D.nc", full.names=T, recursive = T))
+(files <- list.files("/home/matt/Documents/BayWRF", pattern="3D.nc", full.names=T, recursive = T))
 
 # Obtain size and other specifications of file
 library(ncdf4); library(terra)
@@ -51,6 +51,11 @@ nc <- ncdf4::nc_open(files[1])
 # Obtain times
 nc$var[[1]]$name
 times <- ncdf4::ncvar_get(nc, nc$var[[1]])
+
+x <- ncdf4::ncvar_get(nc, nc$var[[2]])
+y <- ncdf4::ncvar_get(nc, nc$var[[3]])
+min(x); max(x)
+min(y); max(y)
 
 # List varnames
 (vars <- sapply(1:length(nc$var), function(x) nc$var[[x]]$longname))
@@ -75,6 +80,7 @@ baywrf_tas_bav <- lapply(files, function(z){
   # Bring data into correct format
   sub_dat <- terra::rast(sub_dat)
   terra::ext(sub_dat) <- c(8.506531,14.271,47.05833,50.74763)
+  crs(sub_dat) <- "+proj=longlat +datum=WGS84 +no_defs"
   
   # Calculate mean temperature
   sub_dat <- terra::mean(sub_dat)
@@ -93,10 +99,13 @@ baywrf_tas_bav <- baywrf_tas_bav - 273.15
 
 # Plot map of minimum temperature data
 terra::plot(baywrf_tas_bav[[100]])
+crs(baywrf_tas_bav[[11]]) <- "+proj=longlat +datum=WGS84 +no_defs"
+tas_bav <- project(baywrf_tas_bav[[11]], y="+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m")
+
 plot(sf::st_geometry(bavaria), add=T, col=NA)
 
 baywrf_tas_bav <- baywrf_tas_bav %>% as.data.frame(xy=T)
-save(baywrf_tas_bav, file="data/baywrf_tas_bav.rda", compress="xz")
+save(baywrf_tas_bav, file="inst/extdata/baywrf_tas_bav.rda", compress="xz")
 
 # Obtain & pre-process rainfall data
 baywrf_pr_bav <- lapply(files, function(z){
@@ -133,7 +142,7 @@ terra::plot(baywrf_pr_bav[[8]])
 plot(sf::st_geometry(bavaria), add=T, col=NA)
 
 baywrf_pr_bav <- baywrf_pr_bav %>% as.data.frame(xy=T)
-save(baywrf_pr_bav, file="data/baywrf_pr_bav.rda", compress="xz")
+save(baywrf_pr_bav, file="inst/extdata/baywrf_pr_bav.rda", compress="xz")
 
 ####################
 
@@ -162,11 +171,6 @@ library(ncdf4); library(terra)
 nc <- ncdf4::nc_open(tasmax_files[[1]][1])
 print(nc)
 
-dat <- raster::stack(tasmax_files[[1]][1])
-raster::crs(dat) <- "+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m"
-bavaria_lcc <- sf::st_transform(bavaria, crs=raster::crs(dat))
-plot(bavaria_lcc, add=T)
-
 # Obtain times
 times <- ncdf4::ncvar_get(nc, nc$var[[1]])
 
@@ -190,8 +194,22 @@ baywrf_tasmin_bav <- lapply(1:length(tasmin_files), function(z){
 
     # Bring data into correct format
     sub_dat <- terra::rast(sub_dat)
-    terra::ext(sub_dat) <- c(8.506531,14.271,47.05833,50.74763)
-
+    terra::rast(ncols=350, nrows=350, resolution = c(1500, 1500), 
+                extent = c(-172000, xmax=353500, ymin=1875000, ymax=2400500),
+                crs="+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m")
+    terra::ext(sub_dat) <- c(-163000, xmax=362000, ymin=1864500, ymax=2389500)
+    crs(sub_dat) <- "+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m"
+    sub_dat
+    sub_dat <- terra::project(sub_dat, y="+proj=longlat +datum=WGS84 +no_defs")
+    
+    # Mid-coordinates as given by NetCDF Info: 48.9281578063965, 11.4047546386719
+    (ext(sub_dat)[4]- ext(sub_dat)[3])/2+ ext(sub_dat)[3]
+    (ext(sub_dat)[2]- ext(sub_dat)[1])/2+ ext(sub_dat)[1]
+    
+    r <- terra::rast(ncols=271, nrows=271, resolution = c(0.0212711, 0.01361365), 
+                     extent = c(8.506531, 14.271, 47.05833, 50.74763))
+    sub_dat <- project(sub_dat, r)
+    
     # Close nc file
     ncdf4::nc_close(nc)
     return(sub_dat)
@@ -210,13 +228,15 @@ baywrf_tasmin_bav <- lapply(1:length(tasmin_files), function(z){
 baywrf_tasmin_bav <- terra::rast(baywrf_tasmin_bav); gc()
 names(baywrf_tasmin_bav)
 
+baywrf_tasmin_bav <- baywrf_tasmin_bav - 273.15
+
 # Plot map of minimum temperature data
 terra::plot(baywrf_tasmin_bav[[8]])
 plot(sf::st_geometry(bavaria), add=T, col=NA)
 
 baywrf_tasmin_bav <- baywrf_tasmin_bav %>% as.data.frame(xy=T)
 head(baywrf_tasmin_bav)
-save(baywrf_tasmin_bav, file="data/baywrf_tasmin_bav.rda", compress="xz")
+save(baywrf_tasmin_bav, file="inst/extdata/baywrf_tasmin_bav.rda", compress="xz")
 
 baywrf_tasmax_bav <- lapply(1:length(tasmax_files), function(z){
   sub_dat <- lapply(unlist(tasmax_files[[z]]), function(y){
@@ -228,7 +248,21 @@ baywrf_tasmax_bav <- lapply(1:length(tasmax_files), function(z){
     
     # Bring data into correct format
     sub_dat <- terra::rast(sub_dat)
-    terra::ext(sub_dat) <- c(8.506531,14.271,47.05833,50.74763)
+    terra::rast(ncols=350, nrows=350, resolution = c(1500, 1500), 
+                     extent = c(-172000, xmax=353500, ymin=1875000, ymax=2400500),
+                     crs="+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m")
+    terra::ext(sub_dat) <- c(-163000, xmax=362000, ymin=1864500, ymax=2389500)
+    crs(sub_dat) <- "+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m"
+    sub_dat
+    sub_dat <- terra::project(sub_dat, y="+proj=longlat +datum=WGS84 +no_defs")
+   
+    # Mid-coordinates as given by NetCDF Info: 48.9281578063965, 11.4047546386719
+    (ext(sub_dat)[4]- ext(sub_dat)[3])/2+ ext(sub_dat)[3]
+    (ext(sub_dat)[2]- ext(sub_dat)[1])/2+ ext(sub_dat)[1]
+
+    r <- terra::rast(ncols=271, nrows=271, resolution = c(0.0212711, 0.01361365), 
+                     extent = c(8.506531, 14.271, 47.05833, 50.74763))
+    sub_dat <- project(sub_dat, r)
     
     # Close nc file
     ncdf4::nc_close(nc)
@@ -248,15 +282,17 @@ baywrf_tasmax_bav <- lapply(1:length(tasmax_files), function(z){
 baywrf_tasmax_bav <- terra::rast(baywrf_tasmax_bav); gc()
 names(baywrf_tasmax_bav)
 
+baywrf_tasmax_bav <- baywrf_tasmax_bav - 273.15
+
 # Plot map of maximum precipitation data
 terra::plot(baywrf_tasmax_bav[[8]])
 plot(sf::st_geometry(bavaria), add=T, col=NA)
 
 baywrf_tasmax_bav <- baywrf_tasmax_bav %>% as.data.frame(xy=T)
 head(baywrf_tasmax_bav)
-save(baywrf_tasmax_bav, file="data/baywrf_tasmax_bav.rda", compress="xz")
+save(baywrf_tasmax_bav, file="inst/extdata/baywrf_tasmax_bav.rda", compress="xz")
 
-# Example documentation for bioclim data
+# Example documentation for baywrf data
 
 #'
 #' @docType data
