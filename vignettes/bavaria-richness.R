@@ -1,0 +1,197 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = T, comment = NA, warning=F, message=F, eval=F,
+  echo=T, error=F, comment = "#>", fig.path="../figures/", fig.width=7, fig.height=7
+)
+
+## ----load_data----------------------------------------------------------------
+#  rm(list=ls()); invisible(gc())
+#  
+#  #+ data_setup, results="hide"
+#  # Load packages
+#  library(data.table); library(dtplyr); library(dplyr, warn.conflicts = FALSE)
+#  library(magrittr); library(tidyr)
+#  
+#  ########################
+#  # Set file directory
+#  filedir <- sub("/vignettes", "", getwd())
+#  
+#  # Load ASK database
+#  my_db <- DBI::dbConnect(RSQLite::SQLite(), dbname = paste0(filedir, "/rawdata/ASK.db"))
+#  
+#  # Pull part of ASK database including data on species
+#  ask_data <- dplyr::tbl(my_db, paste("ask_art")) %>% collect()
+#  
+#  # Load background grid
+#  tk25 <- dplyr::tbl(my_db, "geo_tk25_quadranten") %>% dplyr::collect() %>%
+#    tidyr::unite(col="quadrant", c("KARTE", "QUADRANT"), sep="/", remove = TRUE) %>%
+#    dplyr::select(-c("KARTE_QUAD"))
+#  
+#  # Load taxonomy
+#  load(paste0(filedir, "/data/taxonomyStd.rda"))
+#  
+#  # Load ask_fuo
+#  ask_fuo <- dplyr::tbl(my_db, "ask_fuo") %>% collect()
+#  
+#  # Load Red List data
+#  fuf_art <- dplyr::tbl(my_db, "fuf_art") %>% collect()
+#  DBI::dbDisconnect(my_db)
+#  
+#  # combine gridded map from dat_ask with full locations of recorded species and taxonomy
+#  dat_ask <- ask_data %>% dplyr::select(-c(gkk_rw, gkk_hw, objnr, rw, hw)) %>%
+#    dplyr::left_join(ask_fuo) %>%  dplyr::left_join(fuf_art %>% dplyr::select(-art), by="art_id") %>%
+#    dplyr::left_join(tk25) %>% dplyr::left_join(taxonomyStd, by=c("art" = "scientificName"))
+#  dat_ask <- dat_ask %>% tidyr::drop_na(class, order)
+#  dat_ask$KARTE_QUAD <- as.numeric(sub("/", "", dat_ask$quadrant))
+#  
+#  #nrow(dat_ask)
+#  ask_tk25 <- dat_ask %>% dplyr::select(KARTE_QUAD) %>% drop_na()
+#  #nrow(ask_tk25)
+#  
+#  ask_gkk <- ask_data %>% dplyr::select(gkk_rw, gkk_hw) %>% drop_na()
+#  #nrow(ask_gkk)
+#  
+#  # Create custom taxon vector (Aves, Lepidoptera, Odonata, Orthoptera)
+#  dat_ask$class_order <- "Aves"
+#  dat_ask$class_order[dat_ask$class == "Insecta"] <- dat_ask$order[dat_ask$class == "Insecta"]
+#  unique(dat_ask$class_order)
+#  unique(dat_ask$family)
+#  
+#  dat_lepi <- dat_ask %>% filter(class_order == "Lepidoptera") %>%
+#    filter(family == "Papilionidae" | family == "Hesperiidae" | family == "Pieridae" |
+#             family == "Nymphalidae" | family == "Lycaenidae" | family == "Riodinidae")
+#  dat_non_lepi <-  dat_ask %>% filter(class_order != "Lepidoptera")
+#  dat_ask <- bind_rows(dat_lepi, dat_non_lepi)
+#  
+#  dat_ask %<>% dplyr::select(XQMITTE, YQMITTE, KARTE_QUAD, jahr, mon, rld,
+#                             class, class_order, scientificNameStd, art)
+#  rm(ask_fuo, ask_data, my_db); invisible(gc())
+#  
+#  # ## Subset data by year
+#  dat_ask <- dat_ask %>% filter(class == "Insecta") %>%
+#    filter(jahr >= 1985, jahr <= 2019) %>% dplyr::select(-class); invisible(gc())
+#  
+#  # Summarise number of species per taxon
+#  dat_all <- dat_ask %>% group_by(class_order) %>%
+#    summarise(n_total=n_distinct(scientificNameStd))
+#  
+#  # Get species overview for Red List Species
+#  dat_rld <- dat_ask %>% filter(rld %in% c(0,1,2,3)) %>%
+#    group_by(class_order) %>%
+#    summarise(n_rld=n_distinct(scientificNameStd))
+#  
+#  # Summary of number of species
+#  left_join(dat_rld, dat_all) %>%
+#    mutate(perc_rld = n_rld/n_total*100)
+
+## -----------------------------------------------------------------------------
+#  # Calculate species richness for each taxonomic group
+#  sum_dat <- dat_ask %>% group_by(XQMITTE, YQMITTE, class_order) %>%
+#    summarise(sr_std=n_distinct(scientificNameStd)) %>% drop_na()
+#  
+#  list_dat <- sum_dat %>% group_by(class_order) %>% group_split(.keep=F)
+#  r_names <- sum_dat %>% group_by(class_order) %>% group_keys() %>% unlist()
+#  rast_dat <- lapply(list_dat, function(x){
+#    dat <- raster::rasterFromXYZ(x, crs=sp::CRS("+init=epsg:31468"), res=c(6100, 5550), digits=0)
+#    raster::extend(dat, y=raster::extent(c(4279033, 4638933, 5236691, 5608687)))
+#  })
+#  rast_dat <- raster::stack(rast_dat)
+#  names(rast_dat) <- r_names
+#  rast_dat
+#  
+#  # Calculate total species richness
+#  sum_dat <- dat_ask %>% group_by(XQMITTE, YQMITTE) %>%
+#    summarise(sr_std=n_distinct(scientificNameStd)) %>% drop_na()
+#  rast_dat2 <- raster::rasterFromXYZ(sum_dat, crs=sp::CRS("+init=epsg:31468"),
+#                                     res=c(6100, 5550), digits=0)
+#  rast_dat2 <- raster::extend(rast_dat2,
+#                              y=raster::extent(c(4279033, 4638933, 5236691, 5608687)))
+#  
+#  rast_dat <- raster::stack(list(rast_dat, rast_dat2))
+#  names(rast_dat)[raster::nlayers(rast_dat)] <- "Total"
+
+## -----------------------------------------------------------------------------
+#  raster::plot(rast_dat)
+
+## -----------------------------------------------------------------------------
+#  raster::writeRaster(rast_dat,
+#              filename=paste0(filedir, "/rawdata/sr_ask_1985_2019_epsg31468_tk4tel.tif"),
+#              format="GTiff", options=c("COMPRESS=NONE", "TFW=YES"), datatype='INT2U',
+#              overwrite=T, bylayer=T, suffix="names", prj=T, setStatistics=T)
+
+## -----------------------------------------------------------------------------
+#  # Calculate species richness for each taxonomic group
+#  sum_dat <- dat_ask %>% filter(rld %in% c(0,1,2,3)) %>%
+#    group_by(XQMITTE, YQMITTE, class_order) %>%
+#    summarise(sr_std=n_distinct(scientificNameStd)) %>% drop_na()
+#  
+#  xy_all <- dat_ask %>% group_by(XQMITTE, YQMITTE, class_order) %>% group_keys() %>%
+#    mutate(xy_all=NA)
+#  sum_dat <- full_join(sum_dat, xy_all) %>% dplyr::select(-c(xy_all))
+#  
+#  list_dat <- sum_dat %>% group_by(class_order) %>% group_split(.keep=F)
+#  r_names <- sum_dat %>% group_by(class_order) %>% group_keys() %>% unlist()
+#  rast_dat <- lapply(list_dat, function(x){
+#    dat <- raster::rasterFromXYZ(x, crs=sp::CRS("+init=epsg:31468"), res=c(6100, 5550), digits=0)
+#    dat <- raster::extend(dat, y=raster::extent(c(4279033, 4638933, 5236691, 5608687)))
+#    return(dat)
+#  })
+#  rast_dat <- raster::stack(rast_dat)
+#  names(rast_dat) <- r_names
+#  rast_dat
+#  
+#  # Calculate total species richness
+#  sum_dat <- dat_ask %>% filter(rld %in% c(0,1,2,3)) %>% group_by(XQMITTE, YQMITTE) %>%
+#    summarise(sr_std=n_distinct(scientificNameStd)) %>% drop_na()
+#  xy_all <- dat_ask %>% group_by(XQMITTE, YQMITTE) %>% group_keys() %>%
+#    mutate(xy_all=NA)
+#  sum_dat <- full_join(sum_dat, xy_all) %>% dplyr::select(-c(xy_all))
+#  rast_dat2 <- raster::rasterFromXYZ(sum_dat, crs=sp::CRS("+init=epsg:31468"),
+#                                     res=c(6100, 5550), digits=0)
+#  rast_dat2 <- raster::extend(rast_dat2, y=raster::extent(c(4279033, 4638933, 5236691, 5608687)))
+#  
+#  rast_dat <- raster::stack(list(rast_dat, rast_dat2))
+#  names(rast_dat)[raster::nlayers(rast_dat)] <- "Total"
+
+## -----------------------------------------------------------------------------
+#  raster::plot(rast_dat)
+
+## -----------------------------------------------------------------------------
+#  raster::writeRaster(rast_dat,
+#                      filename=paste0(filedir,
+#                                      "/rawdata/sr_ask_rld_1985_2019_epsg31468_tk4tel.tif"),
+#                      format="GTiff", options=c("COMPRESS=NONE", "TFW=YES"), datatype='INT2U',
+#                      overwrite=T, bylayer=T, suffix="names", prj=T, setStatistics=T)
+
+## -----------------------------------------------------------------------------
+#  # Bring data into correct format
+#  sum_dat <- dat_ask %>% group_by(XQMITTE, YQMITTE, scientificNameStd) %>%
+#    summarise(no_obs=n()) %>% drop_na() %>% ungroup() %>%
+#    pivot_wider(names_from=scientificNameStd, values_from=no_obs, values_fill=0)
+#  rm(dat_ask); gc()
+#  
+#  # Run beals smoothing for first 10 species, need to remove XQMITTE & YQMITTE
+#  # (thus selection starts with column 3)
+#  
+#  ## Remove target species: Yields lower values.
+#  library(vegan)
+#  beals_dat1 <- beals(sum_dat[,3:12],
+#                      include = FALSE)
+#  
+#  ## Keep target species (default)
+#  beals_dat2 <- beals(sum_dat[,3:12],
+#                      include=TRUE)
+#  
+#  ## Remove the bias of tarbet species: Yields lower values.
+#  beals_dat3 <- beals(sum_dat[,3:12],
+#                      type=3, include=FALSE)
+#  ## Uses abundance information?
+
+## -----------------------------------------------------------------------------
+#  pa <- decostand(sum_dat[,3:12], "pa")
+#  par(mfrow=c(1,3))
+#  boxplot(as.vector(beals_dat1) ~ unlist(pa), xlab="Presence", ylab="Beals (1)", notch=T)
+#  boxplot(as.vector(beals_dat2) ~ unlist(pa), xlab="Presence", ylab="Beals (2)", notch=T)
+#  boxplot(as.vector(beals_dat3) ~ unlist(pa), xlab="Presence", ylab="Beals (3)", notch=T)
+#  rm(list=ls()); invisible(gc())
+

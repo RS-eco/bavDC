@@ -116,7 +116,7 @@ baywrf_pr_bav <- lapply(files, function(z){
                           function(x) strsplit(x, split="_")[[1]][1]))
   
   # Load data
-  sub_dat <- ncdf4::ncvar_get(nc, nc$var[[5]])
+  sub_dat <- ncdf4::ncvar_get(nc, nc$var[[14]])
   
   # Bring data into correct format
   sub_dat <- terra::rast(sub_dat)

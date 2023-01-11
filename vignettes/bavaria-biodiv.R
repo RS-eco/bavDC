@@ -1,0 +1,80 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE, results="asis", echo=F, warning=F, message=F, comment = NA,
+  fig.width=8, fig.height=8, fig.path="../figures/"
+)
+
+## ----load_pkgs----------------------------------------------------------------
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(raster)
+library(sf)
+
+# Define standard colour scheme
+bluewhitered <- colorRampPalette(c("#009392","#39b185","#9ccb86","#e9e29c","#eeb479","#e88471","#cf597e"))(255)
+
+## -----------------------------------------------------------------------------
+# Load shapefile of Bavaria
+data("bavaria", package="bavDC")
+
+## ---- fig.width=10, fig.height=5----------------------------------------------
+data("amphibians_bav", package="bavDC")
+data("bird_bav", package="bavDC")
+data("gard_reptiles_bav", package="bavDC")
+load(system.file("extdata", "mammals_bav.rda", package = "bavDC"))
+data("odonata_bav", package="bavDC")
+data("reptiles_bav", package="bavDC")
+
+data("tk25_grid", package="bavDC")
+tk25_grid <- tk25_grid %>% raster::rasterFromXYZ()
+raster::projection(tk25_grid) <- sp::CRS("+init=epsg:31468")
+tk25_grid <- raster::projectRaster(tk25_grid, crs=sp::CRS("+init=epsg:4326"))
+
+#nrow(amphibians_bav); sum(amphibians_bav$presence)
+
+amphi <- raster::rasterize(amphibians_bav, tk25_grid) %>% 
+  raster::mask(tk25_grid) %>% 
+  raster::rasterToPoints() %>% data.frame()
+bird <- raster::rasterize(bird_bav, tk25_grid) %>% 
+  raster::mask(tk25_grid) %>% 
+  raster::rasterToPoints() %>% data.frame()
+mam <- raster::rasterize(mammals_bav, tk25_grid) %>% 
+  raster::mask(tk25_grid) %>% 
+  raster::rasterToPoints() %>% data.frame()
+odo <- raster::rasterize(odonata_bav, tk25_grid) %>% 
+  raster::mask(tk25_grid) %>% 
+  raster::rasterToPoints() %>% data.frame()
+rep <- raster::rasterize(reptiles_bav, tk25_grid) %>% 
+  raster::mask(tk25_grid) %>% 
+  raster::rasterToPoints() %>% data.frame()
+gard_rep <- raster::rasterize(gard_reptiles_bav, tk25_grid) %>% 
+  raster::mask(tk25_grid) %>% 
+  raster::rasterToPoints() %>% data.frame()
+
+#colnames(bird)
+
+# Plot species richness of individual taxa
+p1 <- amphi %>% ggplot() + geom_tile(aes(x=x,y=y,fill=layer)) + 
+  scale_fill_gradientn(name="Amphibian SR", colours=bluewhitered) + 
+  geom_sf(data=bavaria, fill=NA) + coord_sf() + labs(x="", y="")
+p2 <- bird %>% ggplot() + geom_tile(aes(x=x,y=y,fill=layer)) + 
+  scale_fill_gradientn(name="Bird SR", colours=bluewhitered) + 
+  geom_sf(data=bavaria, fill=NA) + coord_sf() + labs(x="", y="")
+p3 <- mam %>% ggplot() + geom_tile(aes(x=x,y=y,fill=layer)) + 
+  scale_fill_gradientn(name="Mammal SR", colours=bluewhitered) + 
+  geom_sf(data=bavaria, fill=NA) + coord_sf() + labs(x="", y="")
+p4 <- odo %>% ggplot() + geom_tile(aes(x=x,y=y,fill=layer)) + 
+  scale_fill_gradientn(name="Odonata SR", colours=bluewhitered) + 
+  geom_sf(data=bavaria, fill=NA) + coord_sf() + labs(x="", y="")
+p5 <- rep %>% ggplot() + geom_tile(aes(x=x,y=y,fill=layer)) + 
+  scale_fill_gradientn(name="Reptile SR", colours=bluewhitered) + 
+  geom_sf(data=bavaria, fill=NA) + coord_sf() + labs(x="", y="")
+p6 <- gard_rep %>% ggplot() + geom_tile(aes(x=x,y=y,fill=layer)) + 
+  scale_fill_gradientn(name="GARD Reptile SR", colours=bluewhitered) + 
+  geom_sf(data=bavaria, fill=NA) + coord_sf() + labs(x="", y="")
+
+p1 + p2 + p3 + 
+  p4 + p5 + p6
+rm(list=ls()); invisible(gc())
+

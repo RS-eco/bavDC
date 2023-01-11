@@ -1,0 +1,306 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(collapse = TRUE, warning=F, message=F, fig.width=10, fig.height=8, eval=T)
+
+## -----------------------------------------------------------------------------
+# Load packages
+library(dplyr); library(tidyr)
+library(ggplot2); library(scico)
+
+# Load bavDC package
+library(bavDC)
+
+# Load shapefile of Bavaria
+data("bavaria", package="bavDC")
+
+## -----------------------------------------------------------------------------
+# Install mecofun package if not available
+if(!"mecofun" %in% installed.packages()[,"Package"]){
+  remotes::install_git("https://gitup.uni-potsdam.de/macroecology/mecofun.git")
+}
+
+# Load mecofun package
+library(mecofun)
+#' This package includes the following functions:
+#' predictSDM, crossvalSDM, evalSDM, TSS, expl_deviance, inflated_response
+#' eo_mask, partial_response, range_size, range_centre, select07, select07_cv
+
+## -----------------------------------------------------------------------------
+# Load Brachpieper species data
+data("bird_bva_shape_tk4tel")
+bird_bav <- bird_bva_shape_tk4tel %>% dplyr::select(c(QUADRANT_M, QMP_R_GK, QMP_H_GK, `Großer Brachvogel`))
+
+# Load climate data
+data("cordex_bioclim_bav_tk4tel")
+head(cordex_bioclim_bav_tk4tel)
+
+# Select for current conditions & calculate ensemble mean
+curclim <- cordex_bioclim_bav_tk4tel %>% filter(time_frame == "1991-2020") %>%
+  group_by(x,y) %>% summarise_at(vars(bio1:bio19), ~mean(.,na.rm=T))
+head(curclim)
+
+# Add landcover data to curclim
+data("corine_lc_bav_tk4tel")
+landcover_bav <- corine_lc_bav_tk4tel %>% dplyr::select(x,y,`2018`) %>% 
+  pivot_longer(names_to="year", values_to="clc", -c(x,y)) %>%
+  mutate(presence = 1) %>% pivot_wider(names_from=clc, values_from=presence, values_fill=0)
+
+curclim <- raster::rasterFromXYZ(curclim, crs=sp::CRS("+init=epsg:31468"))
+landcover_bav <- raster::rasterFromXYZ(landcover_bav, crs=sp::CRS("+init=epsg:31468")); gc()
+curenv <- raster::stack(curclim, landcover_bav) %>% raster::rasterToPoints() %>%
+  as.data.frame(); rm(curclim, landcover_bav)
+
+# Select for future conditions and calculate ensemble mean across GCMs
+futclim <- cordex_bioclim_bav_tk4tel %>% filter(time_frame != "1991-2015") %>%
+  group_by(x,y,time_frame, rcp) %>% summarise_at(vars(bio1:bio19), ~mean(.,na.rm=T))
+head(futclim)
+
+## -----------------------------------------------------------------------------
+# plot Brachvogel in bavaria using ggplot -------
+bird_bav %>%
+  mutate(`Großer Brachvogel` = replace_na(`Großer Brachvogel`, 0)) %>% # which dataset to use
+  ggplot() +              # start plotting
+  # type of plot, define x and y axis, define color as factor of Numenius arquata absence or presence, set shape and size
+  geom_point(aes(x=QMP_R_GK, y=QMP_H_GK, color=as.factor(`Großer Brachvogel`)), shape=15, size=2) + 
+  scale_color_manual(name="Presence", values=c("grey80", "blue"), na.value = "transparent") +   # define colors
+  coord_equal() + theme_bw() + labs(x="", y="") +  # set x/y to equal, use custom map-theme
+  ggtitle("Numenius arquata current range")+ # set plot title
+  theme(legend.position = "right")                   # remove legend for the color
+
+# plot environmental variables
+
+#define two colour scales for annual mean temperature and annual precipitation
+tempcol <- scale_fill_scico(name = "°C", palette="roma", direction=-1,
+                                limits = c(min(curenv$bio1),max(cordex_bioclim_bav_tk4tel$bio1)))
+preccol <- scale_fill_scico(name = "mm", palette="roma",
+                                limits = c(min(curenv$bio12),max(cordex_bioclim_bav_tk4tel$bio12)))
+
+curenv %>% # which dataset to use
+  ggplot() + # start plotting
+  # type of plot, define x and y axis, define fill the environmental variable
+  geom_tile(aes(x=x, y=y, fill=bio1)) + 
+  scale_fill_scico(name="°C", palette="roma", direction=-1) +
+  coord_sf() + theme_bw() + labs(x="", y="") + # set x/y to equal, use custom map-theme
+  ggtitle("Annual Mean Temperature") + # set plot title
+  theme(legend.text = element_text(size=10)) # set font size for the legend
+
+#different colour scales (see above):
+
+#bio1: annual mean temperature
+
+curenv %>% ggplot() + geom_tile(aes(x=x, y=y, fill=bio1)) + 
+  tempcol + coord_sf() + theme_bw() + labs(x="", y="") + 
+  ggtitle("Annual Mean Temperature") + 
+  theme(legend.position = "right",
+        panel.background = element_rect(fill="transparent"),
+        plot.background = element_rect(fill="transparent"))
+
+#bio12: annual precipitation
+
+curenv %>% ggplot() + geom_tile(aes(x=x, y=y, fill=bio12)) + 
+  preccol + coord_sf() + theme_bw() + labs(x="", y="") + 
+  ggtitle("Annual Precipitation") + 
+  theme(legend.position = "right",
+        panel.background = element_rect(fill="transparent"),
+        plot.background = element_rect(fill="transparent"))
+
+#bio1
+
+futclim %>% filter(time_frame == "2071-2100", rcp == "rcp26") %>% 
+  ggplot() + geom_tile(aes(x=x, y=y, fill=bio1)) + 
+  tempcol + coord_sf() + theme_bw() + labs(x="", y="") +  
+  ggtitle("Annual Mean Temperature RCP2.6, 2055") + 
+  theme(legend.position = "none",
+        panel.background = element_rect(fill="transparent"),
+        plot.background = element_rect(fill="transparent"))
+
+#bio12
+
+futclim %>% filter(time_frame == "2071-2100", rcp == "rcp26") %>% 
+  ggplot() + geom_tile(aes(x=x, y=y, fill=bio12)) + 
+  preccol + coord_sf() + theme_bw() + labs(x="", y="") + 
+  ggtitle("Annual Precipitation RCP2.6, 2055") + 
+  theme(legend.position = "none",
+        panel.background = element_rect(fill="transparent"),
+        plot.background = element_rect(fill="transparent"))
+
+## -----------------------------------------------------------------------------
+# Convert data into a SpatialPointsDataFrame
+bird_bav <- bird_bav %>% dplyr::select(QMP_R_GK, QMP_H_GK, `Großer Brachvogel`) %>% 
+  drop_na(QMP_R_GK, QMP_H_GK)
+summary(bird_bav)
+sp::coordinates(bird_bav) <- ~QMP_R_GK+QMP_H_GK # set coordinates
+raster::projection(bird_bav) <- sp::CRS("+init=epsg:31468") # set projection
+curenv_r <- terra::rast(curenv, type="xyz",crs="+init=epsg:31468")
+bird_r <- terra::rasterize(terra::vect(sf::st_as_sf(bird_bav)), curenv_r[[1]])
+names(bird_r) <- "Großer_Brachvogel"
+
+spec_clim <- terra::rast(list(bird_r, curenv_r)) %>% as.data.frame(xy=T, na.rm=F) %>% 
+  dplyr::select(c(x,y, Großer_Brachvogel, bio1, bio12)) %>%
+  mutate(Großer_Brachvogel = replace_na(Großer_Brachvogel,0)) %>% drop_na()
+
+# 2 explanatory variables:
+myExpl2 <- c("bio1", "bio12")
+
+# Automatically create model formula from variables
+(formExpl2 <- as.formula(paste("Großer_Brachvogel ~ ", 
+                               paste(myExpl2, collapse="+"),sep = "")))
+
+# Fit Generalized Linear Model (GLM) in the simplest form
+glm_2 <- glm(formExpl2, family='binomial', data=spec_clim)
+
+# You would need to specify polynomials and interactions manually in the formula:
+
+# Fit Generalized Linear Model (GLM) in a bit more complex form (with polynomials)
+glm_2_Pol <- glm(Großer_Brachvogel ~ bio1 + I(bio1^2) + bio12 + I(bio12^2), 
+                        family='binomial', data=spec_clim)
+
+# Fit Generalized Linear Model (GLM) in an even more complex form (with polynomials and interactions)
+glm_2_PolInt <- glm(Großer_Brachvogel ~ bio1 + I(bio1^2) + bio12 + I(bio12^2) + 
+                             bio1*bio12, family='binomial', data=spec_clim)
+
+# check model summary ----
+(sum_glm_2 <- summary(glm_2))
+(sum_glm_2_PolInt <- summary(glm_2_PolInt))
+(sum_glm_2_Pol <- summary(glm_2_Pol))
+
+#par(mfrow=c(1,1))
+#plot(glm_2)
+
+## -----------------------------------------------------------------------------
+# basic plots of occurrence vs. explanatory variable
+par(mfrow=c(1,2))
+plot(spec_clim$bio1, spec_clim$Großer_Brachvogel, ylab="", xlab="bio1")
+plot(spec_clim$bio12, spec_clim$Großer_Brachvogel, ylab="", xlab="bio12")
+
+# check partial response curves
+par(mfrow=c(3,2))
+partial_response(glm_2, predictors = spec_clim[,myExpl2])
+partial_response(glm_2_Pol, predictors = spec_clim[,myExpl2]) 
+partial_response(glm_2_PolInt, predictors = spec_clim[,myExpl2])
+
+#' This is needed for getting TSS, AUC and Kappa values
+
+# Make cross-validated predictions for GLM:
+crosspred_glm_2 <- crossvalSDM(glm_2, kfold=5, 
+                                      traindat= spec_clim, colname_pred=myExpl2, 
+                                      colname_species = "Großer_Brachvogel")
+crosspred_glm_2_Pol <- crossvalSDM(glm_2_Pol, kfold=5, 
+                                          traindat= spec_clim, colname_pred=myExpl2, 
+                                          colname_species = "Großer_Brachvogel")
+
+# Assess cross-validated model performance
+(eval_glm_2 <- evalSDM(observation = spec_clim$Großer_Brachvogel, 
+                              predictions = crosspred_glm_2))
+(eval_glm_2_Pol <- evalSDM(observation = spec_clim$Großer_Brachvogel, 
+                                  predictions = crosspred_glm_2_Pol))
+
+# check variable importances
+par(mfrow=c(1,1))
+(glm_imp <- caret::varImp(glm_2, scale=T))
+barplot((glm_imp$Overall/sum(glm_imp$Overall)*100)[2:1], 
+        names.arg=rownames(glm_imp)[2:1], horiz=T,
+        main="GLM", xlab="Relative influence")
+
+## -----------------------------------------------------------------------------
+#' ### CURRENT CLIMATE
+
+# Make predictions to current climate:
+spec_clim$pred_glm_2 <- predictSDM(glm_2, spec_clim)
+
+# Make binary/threshholded predictions:
+spec_clim$bin_glm_2 <- ifelse(spec_clim$pred_glm_2 > eval_glm_2$thresh, 1, 0)
+
+par(mfrow=c(1,1), mar=c(5,5,4,1))
+boxplot(spec_clim$pred_glm_2 ~ spec_clim$Großer_Brachvogel, las=1, 
+        xlab="Aktuelle Verbreitung", ylab="Vorkommenswahrscheinlichkeit", cex.lab=2,
+        col="dodgerblue4", cex.axis=1.5, main="GLM-Modell mit 2 Klimavariablen", cex.main=2)
+
+#---------------------------------------------------
+#' ## plot species using ggplot 
+#---------------------------------------------------
+
+# plot histogramm
+
+spec_clim %>% ggplot() + geom_histogram(aes(x=pred_glm_2), col="grey0", alpha=0.2) +
+  labs(y="Number of grid cells", x="Occurrence probability",
+       title="Distribution of Großer_Brachvogel") + 
+  geom_hline(yintercept = 0, linetype="dashed", color="darkgrey") + theme_classic()
+
+# plot maps
+
+# probability map
+(plot_curclim_GLM <- spec_clim %>% ggplot() + 
+    geom_tile(aes(x=x, y=y, fill=pred_glm_2)) + 
+    scale_fill_scico(name="Probability of occurrence", palette="roma", direction=-1)  +  
+    coord_sf() + theme_bw() + labs(x="", y="") + 
+    ggtitle("GLM current climate") + 
+    theme(legend.text = element_text(size=10)))
+
+# binary map
+(plot_curclim_GLM_bin <- 
+    spec_clim %>%
+    ggplot() + geom_tile(aes(x=x, y=y, fill=as.factor(bin_glm_2))) + 
+    scale_fill_manual(name="Occurrence", values=c("grey80", "blue")) + 
+    coord_sf() + theme_bw() + ggtitle("GLM current climate") + 
+    theme(legend.text = element_text(size=10)))
+#---------------------------------------------------
+# FUTURE CLIMATE ----
+#---------------------------------------------------
+
+# Assess novel environments in future climate layer:
+
+# Values of 1 in the eo.mask will indicate novel environmental conditions
+futclim$eo_mask <- eo_mask(spec_clim[,myExpl2], futclim[,myExpl2])
+futclim %>% # which dataset to use
+  ggplot() +              # start plotting
+  # type of plot, define x axis, y axis is automatically a count, define color and transparency
+  geom_tile(aes(x=x, y=y, fill=as.factor(eo_mask))) +
+  scale_fill_manual(name="", values=c("grey80", "blue")) + 
+  coord_sf() + theme_bw() + labs(x="", y="") +        # set x/y to equal, use custom map-theme
+  ggtitle("Environmental novelty") +       # set plot title
+  theme(legend.text = element_text(size=10)) # set font size for the legend
+
+# Make predictions to futclim
+futclim$pred_glm_2 <- predictSDM(glm_2, futclim)
+
+# Make binary/threshholded predictions:
+futclim$bin_glm_2 <- ifelse(futclim$pred_glm_2 > eval_glm_2$thresh, 1, 0)
+
+# => using this framework you can proceed with other future climate data
+
+#---------------------------------------------------
+# plot species using ggplot 
+#---------------------------------------------------
+
+# plot histogramm
+futclim %>% # which dataset to use
+  ggplot() +              # start plotting
+  # type of plot, define x axis, y axis is automatically a count, define color and transparency
+  geom_histogram(aes(x=pred_glm_2), col="grey0", alpha=0.2) +
+  labs(y="Number of grid cells", x="Occurrence probability",        # add axis labels
+       title="Distribution of Großer_Brachvogel under CC2670 GLM") +      # add axis labels
+  geom_hline(yintercept = 0, linetype="dashed", color="darkgrey") + # add a horizontal line
+  theme_classic()
+
+# plot maps
+
+# probability map
+(plot_CC6070_GLM <- 
+    futclim %>% # which dataset to use
+    ggplot() +  geom_tile(aes(x=x, y=y, fill=pred_glm_2)) + 
+    scale_fill_scico(name="Probability of\noccurrence", palette = "roma", direction=-1) +
+    coord_sf() + theme_bw() + labs(x="", y="") + 
+    ggtitle("GLM CC6070") +       # set plot title
+    theme(legend.text = element_text(size=10))) # set font size for the legend
+
+# binary map
+(plot_CC6070_GLM_bin <- 
+    futclim %>% # which dataset to use
+    ggplot() +                 # start plotting
+    # type of plot, define x and y axis, define color by probability of occurrence, set shape and size
+    geom_tile(aes(x=x, y=y, fill=as.factor(bin_glm_2))) + 
+    scale_fill_manual(name="Occurrence", values=c("grey80", "blue")) + 
+    coord_sf() + theme_bw() + labs(x="", y="") + 
+    ggtitle("GLM CC6070") +       # set plot title
+    theme(legend.text = element_text(size=10))) # set font size for the legend
+

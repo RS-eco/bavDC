@@ -1,0 +1,99 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = T, comment = NA, warning=F, message=F, 
+  eval=T, echo=T, error=F, fig.path="../figures/"
+)
+
+## ----pa-overview, fig.width=6, fig.height=8-----------------------------------
+# Load bavDC & ggplot2 package
+library(bavDC); library(dplyr); library(ggplot2); library(tidyr)
+
+# Load climate data from bavDC package
+data(cci_bav, package="bavDC")
+r <- raster::raster(res=c(0.002777778, 0.002777778), xmn=8.975, xmx=13.84167, ymn=47.26944, ymx=50.56667)
+df_area <- as.data.frame(raster::rasterToPoints(raster::area(r))) #km2
+colnames(df_area) <- c("x", "y", "area")
+
+cci_bav$x <- signif(cci_bav$x, digits=5)
+cci_bav$y <- signif(cci_bav$y, digits=5)
+df_area$x <- signif(df_area$x, digits=5)
+df_area$y <- signif(df_area$y, digits=5)
+cci_bav <- left_join(cci_bav, df_area)
+
+sum_cci <- cci_bav %>% gather(year, class, -c(x,y,area)) %>%
+  group_by(year, class) %>% summarise(total_area=sum(area, na.rm=T))
+
+sum_cci %>% filter(year == 1992) %>% summarise(area=sum(total_area)) %>% unlist() 
+
+sum_cci %>% mutate(perc_area=total_area/65566.1102453413*100) %>% 
+  ggplot() + geom_bar(aes(x=year, y=perc_area, fill=class), stat="identity") + 
+  theme_bw() + theme(legend.position="bottom") + 
+  labs(x="Year", y="Land cover (%)", fill="LC class")
+
+#sum_cci <- cci_bav %>% dplyr::select(-c(x,y)) %>% 
+#  group_by(`1992`, `1993`, `1994`, `1995`, `1996`, `1997`, `1998`, `1999`, `2000`, `2001`, `2002`,
+#           `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`,
+#           `2014`, `2015`, `2016`, `2017`, `2018`, `2019`, `2020`) %>% 
+#  summarise(total_area=sum(area, na.rm=T))
+
+## ---- fig.width=8, fig.height=6-----------------------------------------------
+# IPCC Classes
+
+#10 -40 = Agriculture
+#50 - 100 + 160, 170 = Forest
+#110 + 130 = Grassland
+#180 = Wetland
+#190 = Settlement
+#120, 140, 150, 200, 210 = Other (Shrubland, Sparse vegetation, Bare area, Water)
+sum_cci2 <- cci_bav %>% gather(year, class, -c(x,y,area)) %>%
+  mutate(class = factor(class, levels=c("No Data", "Cropland, rainfed", "Cropland, irrigated or post-flooding",
+                     "Mosaic cropland (>50%) / natural vegetation (tree, shrub, herbaceous cover) (<50%)",
+                     "Mosaic natural vegetation (tree, shrub, herbaceous cover) (>50%) / cropland (<50%)",
+                     "Tree cover, broadleaved, evergreen, closed to open (>15%)",
+                     "Tree cover, broadleaved, deciduous, closed to open (>15%)",
+                     "Tree cover, needleleaved, evergreen, closed to open (>15%)",
+                     "Tree cover, needleleaved, deciduous, closed to open (>15%)",
+                     "Tree cover, mixed leaf type (broadleaved and needleleaved)",
+                     "Mosaic tree and shrub (>50%) / herbaceous cover (<50%)",
+                     "Mosaic herbaceous cover (>50%) / tree and shrub (<50%)", 
+                     "Shrubland", "Grassland", "Lichens and mosses", 
+                     "Sparse vegetation (tree, shrub, herbaceous cover) (<15%)", 
+                     "Tree cover, flooded, fresh or brakish water", 
+                     "Tree cover, flooded, saline water", 
+                     "Shrub or herbaceous cover, flooded, fresh/saline/brakish water",
+                     "Urban areas", "Bare areas", "Water bodies", "Permanent snow and ice"))) %>%
+  mutate(class2 =  factor(class, levels=c("No Data", "Cropland, rainfed", "Cropland, irrigated or post-flooding",
+                     "Mosaic cropland (>50%) / natural vegetation (tree, shrub, herbaceous cover) (<50%)",
+                     "Mosaic natural vegetation (tree, shrub, herbaceous cover) (>50%) / cropland (<50%)",
+                     "Tree cover, broadleaved, evergreen, closed to open (>15%)",
+                     "Tree cover, broadleaved, deciduous, closed to open (>15%)",
+                     "Tree cover, needleleaved, evergreen, closed to open (>15%)",
+                     "Tree cover, needleleaved, deciduous, closed to open (>15%)",
+                     "Tree cover, mixed leaf type (broadleaved and needleleaved)",
+                     "Mosaic tree and shrub (>50%) / herbaceous cover (<50%)",
+                     "Mosaic herbaceous cover (>50%) / tree and shrub (<50%)", 
+                     "Shrubland", "Grassland", "Lichens and mosses", 
+                     "Sparse vegetation (tree, shrub, herbaceous cover) (<15%)", 
+                     "Tree cover, flooded, fresh or brakish water", 
+                     "Tree cover, flooded, saline water", 
+                     "Shrub or herbaceous cover, flooded, fresh/saline/brakish water",
+                     "Urban areas", "Bare areas", "Water bodies", "Permanent snow and ice"),
+                     labels=c("No Data", "Cropland", "Cropland",
+                     "Cropland", "Cropland", "Forest", "Forest", "Forest", "Forest", "Forest",
+                     "Forest", "Grassland", "Other", "Grassland", "Other", 
+                     "Other", "Forest", "Forest", "Wetland", "Settlement", "Other", "Other", 
+                     "Permanent snow and ice"))) %>%
+  group_by(year, class2) %>% summarise(total_area=sum(area, na.rm=T)) %>%
+  mutate(perc_area=total_area/65566.1102453413*100)
+
+sum_cci2 %>% ggplot() + geom_bar(aes(x=year, y=perc_area, fill=class2), stat="identity") + 
+  labs(x="Year", y="Land-cover (%)", fill="LC class") + theme_bw()
+
+## ---- fig.height=10, fig.width=8----------------------------------------------
+sum_cci2 %>% ggplot(aes(x=year, y=perc_area, group=class2)) + geom_line() + 
+  facet_wrap(.~class2, scales="free_y", ncol=1, strip.position = "left") + 
+  labs(x="Year", y="", colour="LC class") + theme_bw() + 
+  theme(strip.background = element_blank(), strip.text=element_text(size=12, face="bold"),
+        strip.placement="outside")
+rm(list=ls()); invisible(gc())
+

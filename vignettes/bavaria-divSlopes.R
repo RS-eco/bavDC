@@ -1,0 +1,126 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = T, comment = NA, warning=F, message=F, echo=T, error=F, eval=F,
+  comment = "#>", fig.width=7, fig.height=7, fig.path="../figures/"
+)
+
+## ----load_data----------------------------------------------------------------
+#  rm(list=ls()); gc()
+#  
+#  #+ data_setup, results="hide"
+#  # Load packages
+#  library(data.table); library(dtplyr); library(dplyr, warn.conflicts = FALSE)
+#  library(magrittr); library(tidyr)
+#  
+#  ########################
+#  
+#  # Load ASK database
+#  my_db <- DBI::dbConnect(RSQLite::SQLite(), dbname = "../rawdata/ASK.db")
+#  # Pull part of ASK database including data on species
+#  ask_data <- dplyr::tbl(my_db, paste("ask_art")) %>% collect()
+#  
+#  # Load background grid
+#  tk25 <- dplyr::tbl(my_db, "geo_tk25_quadranten") %>% dplyr::collect() %>%
+#    tidyr::unite(col="quadrant", c("KARTE", "QUADRANT"), sep="/", remove = TRUE) %>%
+#    dplyr::select(-c("KARTE_QUAD"))
+#  
+#  # Load taxonomy
+#  library(bavDC)
+#  data("taxonomyStd")
+#  
+#  # Load ask_fuo
+#  ask_fuo <- dplyr::tbl(my_db, "ask_fuo") %>% collect()
+#  DBI::dbDisconnect(my_db)
+#  
+#  # combine gridded map from dat_ask with full locations of recorded species and taxonomy
+#  dat_ask <- ask_data %>% dplyr::select(-c(gkk_rw, gkk_hw, objnr, rw, hw)) %>%
+#     dplyr::left_join(ask_fuo) %>%  dplyr::left_join(tk25) %>%
+#     dplyr::left_join(taxonomyStd, by=c("art" = "scientificName"))
+#  dat_ask <- dat_ask %>% tidyr::drop_na(class, order)
+#  dat_ask$KARTE_QUAD <- as.numeric(sub("/", "", dat_ask$quadrant))
+#  
+#  #nrow(dat_ask)
+#  ask_tk25 <- dat_ask %>% dplyr::select(KARTE_QUAD) %>% drop_na()
+#  #nrow(ask_tk25)
+#  
+#  ask_gkk <- ask_data %>% dplyr::select(gkk_rw, gkk_hw) %>% drop_na()
+#  #nrow(ask_gkk)
+#  
+#  # Create custom taxon vector (Aves, Lepidoptera, Odonata, Orthoptera)
+#  dat_ask$class_order <- "Aves"
+#  dat_ask$class_order[dat_ask$class == "Insecta"] <- dat_ask$order[dat_ask$class == "Insecta"]
+#  #unique(dat_ask$class_order)
+#  
+#  dat_ask %<>% dplyr::select(XQMITTE, YQMITTE, jahr, mon, class_order, scientificNameStd, art)
+#  rm(ask_fuo, ask_data, my_db); invisible(gc())
+#  
+#  # ## Subset data by year
+#  dat_ask <- dat_ask %>% filter(jahr >= 1985, jahr <= 2019); invisible(gc())
+
+## -----------------------------------------------------------------------------
+#  # Calculate species richness for each taxonomic group
+#  sum_dat1 <- dat_ask %>%
+#    group_by(XQMITTE, YQMITTE, jahr, class_order) %>%
+#    summarise(sr_std=n_distinct(scientificNameStd)) %>% drop_na() %>% ungroup() %>%
+#    arrange(jahr) %>% pivot_wider(names_from=jahr, values_from=sr_std) %>%
+#    mutate_at(vars(-c(XQMITTE, YQMITTE, class_order)), ~replace_na(., replace = 0))
+#  
+#  list_dat1 <- sum_dat1 %>% group_by(class_order) %>% group_split(.keep=F)
+#  r_names1 <- sum_dat1 %>% group_by(class_order) %>% group_keys() %>% unlist()
+#  rast_dat1 <- lapply(list_dat1, function(x){
+#    dat <- raster::rasterFromXYZ(x, crs=sp::CRS("+init=epsg:31468"), res=c(6100, 5550), digits=0)
+#    raster::extend(dat, y=raster::extent(c(4279033, 4638933, 5236691, 5608687)))
+#  })
+#  names(rast_dat1) <- r_names1
+#  
+#  # Calculate total species richness
+#  sum_dat2 <- dat_ask %>%
+#    group_by(XQMITTE, YQMITTE, jahr) %>%
+#    summarise(sr_std=n_distinct(scientificNameStd)) %>% drop_na() %>% ungroup() %>%
+#    arrange(jahr) %>% pivot_wider(names_from=jahr, values_from=sr_std) %>%
+#    mutate_at(vars(-c(XQMITTE, YQMITTE)), ~replace_na(., replace = 0))
+#  rast_dat2 <- raster::rasterFromXYZ(sum_dat2, crs=sp::CRS("+init=epsg:31468"),
+#                                     res=c(6100, 5550), digits=0)
+#  rast_dat2 <- raster::extend(rast_dat2, y=raster::extent(c(4279033, 4638933, 5236691, 5608687)))
+#  rast_dat <- c(rast_dat1, list(rast_dat2))
+#  names(rast_dat)
+#  names(rast_dat)[5] <- "Total"
+
+## -----------------------------------------------------------------------------
+#  library(raster)
+#  ### A much (> 100 times) faster approach is to directly use
+#  ### linear algebra and pre-compute some constants
+#  time <- 1:raster::nlayers(rast_dat[[1]])
+#  
+#  ## add 1 for a model with an intercept
+#  X <- cbind(1, time)
+#  
+#  ## pre-computing constant part of least squares
+#  invXtX <- solve(t(X) %*% X) %*% t(X)
+#  
+#  ## much reduced regression model; [2] is to get the slope
+#  slope <- function(y) (invXtX %*% y)[2]
+#  intercept <- function(y) (invXtX %*% y)[1]
+#  
+#  slope_lm_dat <- raster::stack(lapply(1:length(rast_dat), function(z){
+#    raster::calc(rast_dat[[z]], slope)
+#  }))
+#  names(slope_lm_dat) <- names(rast_dat)
+#  intercept_lm_dat <- raster::stack(lapply(1:length(rast_dat), function(z){
+#    raster::calc(rast_dat[[z]], intercept)
+#  }))
+#  names(intercept_lm_dat) <- names(rast_dat)
+
+## ---- fig.width=7, fig.height=10----------------------------------------------
+#  par(mfrow=c(4,2))
+#  for(z in 1:4){
+#    plot(intercept_lm_dat[[z]], main=paste0("Intercept - ", names(rast_dat)[[z]]))
+#    plot(slope_lm_dat[[z]], main=paste0("Slope - ", names(rast_dat)[[z]]))
+#  }
+
+## ---- fig.width=7, fig.height=5-----------------------------------------------
+#  par(mfrow=c(1,2))
+#  plot(intercept_lm_dat[[5]], nc=1, main="Intercept")
+#  plot(slope_lm_dat[[5]], nc=1, main="Slope")
+#  rm(list=ls()); gc()
+
