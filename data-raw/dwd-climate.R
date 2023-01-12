@@ -54,8 +54,8 @@ var1 <- c("air_temperature_mean/", "precipitation/")
 var2 <- c("air_temperature_max/", "air_temperature_min/")
 month <- c("01_Jan", "02_Feb", "03_Mar", "04_Apr", "05_May", "06_Jun", 
            "07_Jul", "08_Aug", "09_Sep", "10_Oct", "11_Nov", "12_Dec")
-year1 <- paste0(1881:2021)
-year2 <- paste0(1901:2021)
+year1 <- paste0(1881:2022)
+year2 <- paste0(1901:2022)
 df1 <- expand.grid(indir=indir, var=var1, month=month, year=year1)
 df2 <- expand.grid(indir=indir, var=var2, month=month, year=year2)
 df1$indir <- paste0(df1$indir, df2$var, df2$month, "/")
@@ -72,8 +72,9 @@ df$var2 <- sub("air_temperature_min/", "TADNMM",
 df$file2 <- paste0(df$var2, "_", substr(df$month, 1, 2), "_", df$year, "_01.asc")
 outdir <- "/home/matt/Documents/DWD/"
 
-#mis <- sapply(df$file, function(z) !file.exists(paste0(outdir, z)))
-#missing_df <- df[mis,]
+mis <- sapply(df$file2, function(z) !file.exists(paste0(outdir, z)))
+missing_df <- df[mis,]
+missing_df
 
 # Download files
 #lapply(1:nrow(missing_df), function(z){
@@ -106,7 +107,7 @@ keys <- avail_df %>% group_by(var2) %>% group_keys()
 avail_df <- avail_df %>% group_by(var2) %>% group_split()
 
 lapply(1:length(avail_df), function(z){
-  if(!file.exists(paste0("extdata/", unique(avail_df[[z]]$var2), "_", first(avail_df[[z]]$year[1:804]), 
+  if(!file.exists(paste0("inst/extdata/", unique(avail_df[[z]]$var2), "_", first(avail_df[[z]]$year[1:804]), 
                          "_", last(avail_df[[z]]$year[1:804]), "_bav.nc"))){
     dat_all <- lapply(1:804, function(k){
       # Load, crop & mask elevation data
@@ -118,11 +119,11 @@ lapply(1:length(avail_df), function(z){
     dat_all <- terra::rast(dat_all); gc()
     time(dat_all) <- as.Date(paste0(avail_df[[z]]$year[1:804],"-", 
                                     substr(avail_df[[z]]$month[1:804],1,2), "-15"))
-    writeCDF(dat_all,filename=paste0("extdata/", unique(avail_df[[z]]$var2), "_", first(avail_df[[z]]$year[1:804]), 
+    writeCDF(dat_all,filename=paste0("inst/extdata/", unique(avail_df[[z]]$var2), "_", first(avail_df[[z]]$year[1:804]), 
                                      "_", last(avail_df[[z]]$year[1:804]), "_bav.nc"))
     rm(dat_all); gc()
   }
-  if(!file.exists(paste0("extdata/", unique(avail_df[[z]]$var2), "_", 
+  if(!file.exists(paste0("inst/extdata/", unique(avail_df[[z]]$var2), "_", 
                          first(avail_df[[z]]$year[805:nrow(avail_df[[z]])]), 
                          "_", last(avail_df[[z]]$year[805:nrow(avail_df[[z]])]), "_bav.nc"))){
     dat_all <- lapply(805:nrow(avail_df[[z]]), function(k){
@@ -135,7 +136,7 @@ lapply(1:length(avail_df), function(z){
     dat_all <- terra::rast(dat_all); gc()
     time(dat_all) <- as.Date(paste0(avail_df[[z]]$year[805:nrow(avail_df[[z]])],"-", 
                                     substr(avail_df[[z]]$month[805:nrow(avail_df[[z]])],1,2), "-15"))
-    writeCDF(dat_all,filename=paste0("extdata/", unique(avail_df[[z]]$var2), "_", 
+    writeCDF(dat_all,filename=paste0("inst/extdata/", unique(avail_df[[z]]$var2), "_", 
                                      first(avail_df[[z]]$year[805:nrow(avail_df[[z]])]), 
                                      "_", last(avail_df[[z]]$year[805:nrow(avail_df[[z]])]), "_bav.nc"))
     rm(dat_all); gc()
@@ -151,9 +152,10 @@ tk4tel_r <- terra::rast(tk4tel_grid, type="xyz")
 
 var <- c("RSMS", "TADNMM", "TADXMM", "TAMM")
 lapply(var, function(z){
-  if(!file.exists(paste0("data/dwd_yearmon_", tolower(z), "_bav_tk4tel.rda"))){
-    files <- list.files(path="extdata", pattern=z, full.names = T)
+  if(!file.exists(paste0("inst/extdata/dwd_yearmon_", tolower(z), "_bav_tk4tel.rda"))){
+    files <- list.files(path="inst/extdata", pattern=z, full.names = T)
     dat <- terra::rast(files)
+    dates <- time(dat)
     plot(dat[[6]])
     time(dat)[1:10]
     
@@ -161,6 +163,7 @@ lapply(var, function(z){
     dat <- terra::aggregate(dat, fact=6, fun="mean", na.rm=T)
     dat <- terra::project(dat, "epsg:31468")
     dat <- terra::resample(dat, tk4tel_r, method="bilinear")
+    time(dat) <- dates
     plot(dat[[6]])
     
     dat_df <- dat %>% as.data.frame(xy=T)
@@ -171,7 +174,7 @@ lapply(var, function(z){
     # Save data
     assign(paste0("dwd_yearmon_", tolower(z), "_bav_tk4tel"), dat_df)
     save(list=paste0("dwd_yearmon_", tolower(z), "_bav_tk4tel"), 
-         file=paste0("data/dwd_yearmon_", tolower(z), "_bav_tk4tel.rda"), compress="xz")
+         file=paste0("inst/extdata/dwd_yearmon_", tolower(z), "_bav_tk4tel.rda"), compress="xz")
     rm(dat, dat_df); gc()
   }
 })
