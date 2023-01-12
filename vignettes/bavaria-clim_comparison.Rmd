@@ -59,9 +59,9 @@ data("wfde5_tair_bav") # In Kelvin
 baywrf_tmean <- baywrf_tas_bav %>% 
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
   group_by(date) %>% summarise(baywrf=mean(tmean, na.rm=T))
-dwd_tmean <- dwd_yearmon_tadmm_bav_tk4tel %>%  
+dwd_tmean <- dwd_yearmon_tamm_bav_tk4tel %>%  
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
-  group_by(date) %>% summarise(wfde5=mean(tmean, na.rm=T))
+  group_by(date) %>% summarise(dwd=mean(tmean, na.rm=T))
 eobs_tmean <- `e-obs_tg_ens_mean_0.1deg_bav_yearmon` %>% 
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
   group_by(date) %>% summarise(`e-obs`=mean(tmean, na.rm=T))
@@ -80,7 +80,7 @@ wfde5_tmean$date <- sub(pattern="[.]", replacement=" ", x=wfde5_tmean$date)
 all_tmean <- full_join(baywrf_tmean, eobs_tmean) %>% full_join(wfde5_tmean) %>% full_join(dwd_tmean) %>%
   tidyr::pivot_longer(cols=-date, names_to="Dataset", values_to="tmean")
 all_tmean$Dataset <- factor(all_tmean$Dataset, 
-                            levels=c("baywrf", "e-obs", "euro-cordex", "wfde5", "dwd"))
+                            levels=c("baywrf", "dwd", "e-obs", "euro-cordex", "wfde5"))
 all_tmean$date <- zoo::as.yearmon(all_tmean$date, "%B %Y")
 
 p1 <- all_tmean %>% ggplot(aes(x=date, y=tmean, col=Dataset)) +
@@ -92,7 +92,7 @@ baywrf_tmin <- baywrf_tasmin_bav %>%
   group_by(date) %>% summarise(baywrf=mean(tmin, na.rm=T))
 dwd_tmin <- dwd_yearmon_tadnmm_bav_tk4tel %>%  
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
-  group_by(date) %>% summarise(wfde5=mean(tmean, na.rm=T))
+  group_by(date) %>% summarise(dwd=mean(tmean, na.rm=T))
 eobs_tmin <- `e-obs_tn_ens_mean_0.1deg_bav_yearmon` %>% 
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmin") %>%
   group_by(date) %>% summarise(`e-obs`=mean(tmin, na.rm=T))
@@ -108,7 +108,7 @@ cordex_tmin <- cordex_tmin %>% filter(year <= "2022") %>% select(-c(time, year))
 all_tmin <- full_join(baywrf_tmin, eobs_tmin) %>% full_join(cordex_tmin) %>% full_join(dwd_tmin) %>%
   tidyr::pivot_longer(cols=-date, names_to="Dataset", values_to="tmin")
 all_tmin$Dataset <- factor(all_tmin$Dataset, 
-                            levels=c("baywrf", "e-obs", "euro-cordex", "wfde5", "dwd"))
+                            levels=c("baywrf", "dwd", "e-obs", "euro-cordex", "wfde5"))
 all_tmin$date <- zoo::as.yearmon(all_tmin$date, "%B %Y")
 p2 <- all_tmin %>% ggplot(aes(x=date, y=tmin, col=Dataset)) +
   geom_line() + scale_colour_discrete(drop=F) + theme_bw()
@@ -119,7 +119,7 @@ baywrf_tmax <- baywrf_tasmax_bav %>%
   group_by(date) %>% summarise(baywrf=mean(tmax, na.rm=T))
 dwd_tmax <- dwd_yearmon_tadxmm_bav_tk4tel %>%  
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
-  group_by(date) %>% summarise(wfde5=mean(tmean, na.rm=T))
+  group_by(date) %>% summarise(dwd=mean(tmean, na.rm=T))
 eobs_tmax <- `e-obs_tx_ens_mean_0.1deg_bav_yearmon` %>% 
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmax") %>%
   group_by(date) %>% summarise(`e-obs`=mean(tmax, na.rm=T))
@@ -135,7 +135,7 @@ cordex_tmax <- cordex_tmax %>% filter(year <= "2022") %>% select(-c(time, year))
 all_tmax <- full_join(baywrf_tmax, eobs_tmax) %>% full_join(cordex_tmax) %>% full_join(dwd_tmax) %>%
   tidyr::pivot_longer(cols=-date, names_to="Dataset", values_to="tmax")
 all_tmax$Dataset <- factor(all_tmax$Dataset, 
-                            levels=c("baywrf", "e-obs", "euro-cordex", "wfde5", "dwd"))
+                            levels=c("baywrf", "dwd", "e-obs", "euro-cordex", "wfde5"))
 all_tmax$date <- zoo::as.yearmon(all_tmax$date, "%B %Y")
 p3 <- all_tmax %>% ggplot(aes(x=date, y=tmax, col=Dataset)) +
   geom_line() + scale_colour_discrete(drop=F) + theme_bw()
@@ -146,7 +146,7 @@ baywrf_pr <- baywrf_pr_bav %>%
   group_by(date) %>% summarise(baywrf=mean(pr, na.rm=T))
 dwd_pr <- dwd_yearmon_rsms_bav_tk4tel %>%  
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="tmean") %>%
-  group_by(date) %>% summarise(wfde5=mean(tmean, na.rm=T))
+  group_by(date) %>% summarise(dwd=mean(tmean, na.rm=T))
 eobs_pr <- `e-obs_rr_ens_mean_0.1deg_bav_yearmon` %>% 
   tidyr::pivot_longer(cols=-c(x,y), names_to="date", values_to="pr") %>%
   group_by(date) %>% summarise(`e-obs`=mean(pr, na.rm=T))
@@ -170,7 +170,7 @@ cordex_pr <- cordex_pr %>% filter(year <= "2022") %>% select(-c(time, year))
 
 all_pr <- full_join(baywrf_pr, eobs_pr) %>% full_join(wfde5_pr) %>% full_join(cordex_pr) %>% full_join(dwd_pr) %>%
   tidyr::pivot_longer(cols=-date, names_to="Dataset", values_to="pr") 
-all_pr$Dataset <- factor(all_pr$Dataset, levels=c("baywrf", "e-obs", "euro-cordex", "wfde5", "dwd"))
+all_pr$Dataset <- factor(all_pr$Dataset, levels=c("baywrf", "dwd", "e-obs", "euro-cordex", "wfde5"))
 all_pr$date <- zoo::as.yearmon(all_pr$date, "%B %Y")
 p4 <- all_pr %>% ggplot(aes(x=date, y=pr, col=Dataset)) +
   geom_line() + scale_colour_discrete(drop=F) + theme_bw()
